@@ -31,6 +31,8 @@ var Autocomplete = this.Autocomplete = new Class({
 	},
 
 	attach: function(){
+		var tag = this.options.tag;
+
 		this.input.addEvents({
 			keyup: this.bound('keypress'),
 			keydown: this.bound('keydown'),
@@ -38,9 +40,16 @@ var Autocomplete = this.Autocomplete = new Class({
 			focus: this.bound('focus'),
 			blur: this.bound('blur')
 		});
+
+		this.output
+			.addEvent('mousedown:relay(' + tag + ')', this.bound('mousedown'))
+			.addEvent('click:relay(' + tag + ')', this.bound('click'))
+			.addEvent('mouseenter:relay(' + tag + ')', this.bound('mouseenter'));
 	},
 
 	detach: function(){
+		var tag = this.options.tag;
+
 		this.input.removeEvents({
 			keyup: this.bound('keypress'),
 			keydown: this.bound('keydown'),
@@ -48,7 +57,27 @@ var Autocomplete = this.Autocomplete = new Class({
 			focus: this.bound('focus'),
 			blur: this.bound('blur')
 		});
+
+		this.output
+			.removeEvent('mousedown:relay(' + tag + ')', this.bound('mousedown'))
+			.removeEvent('click:relay(' + tag + ')', this.bound('click'))
+			.removeEvent('mouseenter:relay(' + tag + ')', this.bound('mouseenter'));
 	},
+
+	mouseenter: function(){
+	
+	},
+
+	mousedown: function(e){
+		e.preventDefault();
+	},
+
+	click: function(e, el){
+		e.preventDefault();
+		if (!el) return;
+		return this.select(el.get('data-id'));
+	},
+
 
 	keydown: function(e){
 		if (e.key === 'down' || e.key === 'up') {
@@ -83,11 +112,11 @@ var Autocomplete = this.Autocomplete = new Class({
 		this.output.setStyle('display', 'none');
 	},
 
-	select: function(){
+	select: function(str){
 		if (this.value === '') return this;
 		
 		var els = this.output.getChildren(),
-			string = (this.selected === -1) ? this.value : els[this.selected].get('data-id');
+			string = (str) ? str : (this.selected === -1) ? this.value : els[this.selected].get('data-id');
 		
 		this.reset();
 		this.parseData();
@@ -123,6 +152,9 @@ var Autocomplete = this.Autocomplete = new Class({
 			fn = function(str, i){
 				var match = str.test(regex);
 				dbg.log('Match Status: ', str, match, !match);
+
+				// For some reason, calling this make everything work properly?!
+				!str.test(regex);
 
 				if (!match) return;
 				matched.push({
