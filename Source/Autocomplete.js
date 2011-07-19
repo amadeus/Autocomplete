@@ -122,10 +122,9 @@ var Autocomplete = this.Autocomplete = new Class({
 			replace = this.options.replace,
 			fn = function(str, i){
 				var match = str.test(regex);
-				if (!match) {
-					dbg.log('Match Status: ', str, match, !match);
-					return;
-				};
+				dbg.log('Match Status: ', str, match, !match);
+
+				if (!match) return;
 				matched.push({
 					str: str,
 					html: str.replace(regex, replace)
