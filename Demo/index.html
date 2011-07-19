@@ -1,0 +1,69 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<title>Autocomplete</title>
+	<script src="dbg.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/mootools/1.3.2/mootools-yui-compressed.js" type="text/javascript" charset="utf-8"></script>
+	<script src="Class.Binds.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../Source/Autocomplete.js" type="text/javascript" charset="utf-8"></script>
+	<script src="data.js" type="text/javascript" charset="utf-8"></script>
+	<style type="text/css" media="screen">
+		ul {
+			padding:0;
+			list-style:none;
+			font-size:16px;
+			font-weight:bold;
+			font-family: Helvetica;
+			color:#666;
+			width:320px;
+			margin:0 auto;
+		}
+
+		ul li {
+			padding:5px 10px;
+			border-bottom:1px solid #fff;
+			background-color:#ccc;
+		}
+
+		ul li.selected {
+			background-color:#000;
+			color:#bbb;
+		}
+
+		ul li span.highlight {
+			color:#000 !important;
+		}
+
+		ul li.selected span.highlight {
+			color:#fff !important;
+		}
+
+		input {
+			display:block;
+			margin:40px auto 0;
+			width:300px;
+			font-size:20px;
+			font-weight:bold;
+			border:1px solid #ccc;
+			padding:5px 10px;
+			font-family: Helvetica;
+			-webkit-box-shadow:0 2px 3px rgba(0,0,0,.2);
+		}
+	</style>
+</head>
+<body>
+	<input id="input" />
+	<ul id="output"></ul>
+	<script type="text/javascript" charset="utf-8">
+		window.addEvent('domready', function(){
+			window.test = new Autocomplete('input', 'output', window.Mapped, {
+				onSelect: function(str, data){
+					if (data === null) dbg.log('Not a valid location');
+					else dbg.log('Selected: ' + str, data);
+				}
+			});
+		});
+	</script>
+</body>
+</html>
