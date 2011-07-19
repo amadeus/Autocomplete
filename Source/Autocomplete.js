@@ -118,7 +118,7 @@ var Autocomplete = this.Autocomplete = new Class({
 
 	parseData: function(){
 		var matched = [],
-			regex = new RegExp(this.value.toLowerCase(), 'gi'),
+			regex = new RegExp(this.value, 'gi'),
 			replace = this.options.replace,
 			fn = function(str, i){
 				var match = str.test(regex);
