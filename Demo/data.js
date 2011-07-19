@@ -519,10 +519,15 @@ var ParseMe = [
 	}
 ];
 
+window.Data = [];
 window.Mapped = {};
-
-ParseMe.each(function(obj){
+var fn = function(obj){
 	window.Mapped[obj.name] = obj;
-});
+	window.Data.push(obj.name);
+	if (obj.children)
+		obj.children.each(fn);
+}
+
+ParseMe.each(fn);
 
 })();

@@ -57,10 +57,9 @@
 	<ul id="output"></ul>
 	<script type="text/javascript" charset="utf-8">
 		window.addEvent('domready', function(){
-			window.test = new Autocomplete('input', 'output', window.Mapped, {
-				onSelect: function(str, data){
-					if (data === null) dbg.log('Not a valid location');
-					else dbg.log('Selected: ' + str, data);
+			window.test = new Autocomplete('input', 'output', window.Data, {
+				onSelect: function(str){
+					dbg.log('Selected: ', str);
 				}
 			});
 		});

@@ -9,12 +9,11 @@ var Autocomplete = this.Autocomplete = new Class({
 		min: 1,
 		replace: '<span class="highlight">$&</span>',
 		tag: 'li',
-		outputMax: 6,
+		outputMax: 20,
 		selected: 'selected'
 	},
 
-	data: {},
-	dataMatch: [],
+	data: [],
 	selected: -1,
 	matched: 0,
 
@@ -28,10 +27,7 @@ var Autocomplete = this.Autocomplete = new Class({
 	},
 
 	addData: function(data){
-		for (var name in data) {
-			this.data[name] = data[name];
-			this.dataMatch.push(name);
-		}
+		this.data.append(Array.from(data));
 	},
 
 	attach: function(){
@@ -72,7 +68,8 @@ var Autocomplete = this.Autocomplete = new Class({
 
 		if (this.input.value === this.value) return;
 
-		this.value = regEscape(this.input.value);
+		//this.value = regEscape(this.input.value);
+		this.value = this.input.value;
 
 		if (this.value.length >= this.options.min) this.parseData();
 		else this.updateList();
@@ -90,12 +87,11 @@ var Autocomplete = this.Autocomplete = new Class({
 		if (this.value === '') return this;
 		
 		var els = this.output.getChildren(),
-			string = (this.selected === -1) ? this.value : els[this.selected].get('data-id'),
-			data = (this.data[string]) ? this.data[string] : null;
+			string = (this.selected === -1) ? this.value : els[this.selected].get('data-id');
 		
 		this.reset();
 		this.parseData();
-		this.fireEvent('select', [string, data]);
+		this.fireEvent('select', [string]);
 	},
 
 	reset: function(){
@@ -122,17 +118,24 @@ var Autocomplete = this.Autocomplete = new Class({
 
 	parseData: function(){
 		var matched = [],
-			regex = new RegExp(this.value, 'gi'),
+			regex = new RegExp(this.value.toLowerCase(), 'gi'),
 			replace = this.options.replace,
 			fn = function(str, i){
-				if (!regex.test(str)) return;
+				var match = str.test(regex);
+				if (!match) {
+					dbg.log('Match Status: ', str, match, !match);
+					return;
+				};
 				matched.push({
 					str: str,
 					html: str.replace(regex, replace)
 				});
 			};
 
-		if (this.value !== '') this.dataMatch.each(fn);
+		dbg.log('Regex: ', regex);
+
+		if (this.value !== '') this.data.each(fn);
+		dbg.log('Array of ', matched);
 		this.updateList(matched);
 	},
 
