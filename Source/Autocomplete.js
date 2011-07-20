@@ -1,3 +1,16 @@
+/*
+---
+
+description: Autocomplete
+
+license: MIT-style
+
+authors:
+- Amadeus Demarzi (http://kiip.com/)
+
+...
+*/
+
 (function(){
 
 var Autocomplete = this.Autocomplete = new Class({
