@@ -30,6 +30,7 @@
 		ul li.selected {
 			background-color:#000;
 			color:#bbb;
+			cursor:pointer
 		}
 
 		ul li span.highlight {
@@ -59,6 +60,7 @@
 	<script type="text/javascript" charset="utf-8">
 		window.addEvent('domready', function(){
 			window.test = new Autocomplete('input', 'output', window.Data, {
+				resetOnSelect: true,
 				onSelect: function(str){
 					dbg.log('Selected: ', str);
 				}

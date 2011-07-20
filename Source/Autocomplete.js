@@ -9,8 +9,9 @@ var Autocomplete = this.Autocomplete = new Class({
 		min: 1,
 		replace: '<span class="highlight">$&</span>',
 		tag: 'li',
-		outputMax: 20,
-		selected: 'selected'
+		outputMax: 8,
+		selected: 'selected',
+		resetOnSelect: false
 	},
 
 	data: [],
@@ -64,25 +65,16 @@ var Autocomplete = this.Autocomplete = new Class({
 			.removeEvent('mouseenter:relay(' + tag + ')', this.bound('mouseenter'));
 	},
 
-	mouseenter: function(){
-	
-	},
-
-	mousedown: function(e){
-		e.preventDefault();
-	},
-
-	click: function(e, el){
-		e.preventDefault();
-		if (!el) return;
-		return this.select(el.get('data-id'));
-	},
-
-
 	keydown: function(e){
-		if (e.key === 'down' || e.key === 'up') {
+		if (e.key === 'down') {
 			e.preventDefault();
-			return this.navigate(e.key);
+			this.selected++;
+			return this.navigate();
+		}
+		if (e.key === 'up') {
+			e.preventDefault();
+			this.selected--;
+			return this.navigate();
 		}
 	},
 
@@ -97,7 +89,6 @@ var Autocomplete = this.Autocomplete = new Class({
 
 		if (this.input.value === this.value) return;
 
-		//this.value = regEscape(this.input.value);
 		this.value = this.input.value;
 
 		if (this.value.length >= this.options.min) this.parseData();
@@ -105,36 +96,51 @@ var Autocomplete = this.Autocomplete = new Class({
 	},
 
 	focus: function(){
-		if (this.matched) this.output.setStyle('display', 'block');
+		if (this.matched.length) this.output.setStyle('display', 'block');
 	},
 
 	blur: function(){
 		this.output.setStyle('display', 'none');
 	},
 
+	mouseenter: function(e, el){
+		this.selected = this.matched.indexOf(el);
+		this.navigate();
+	},
+
+	mousedown: function(e){
+		e.preventDefault();
+	},
+
+	click: function(e, el){
+		e.preventDefault();
+		if (!el) return;
+		return this.select(el.get('data-id'));
+	},
+
 	select: function(str){
 		if (this.value === '') return this;
-		
-		var els = this.output.getChildren(),
-			string = (str) ? str : (this.selected === -1) ? this.value : els[this.selected].get('data-id');
-		
-		this.reset();
-		this.parseData();
+
+		var string = (str) ? str : (this.selected === -1) ? this.value : this.matched[this.selected].get('data-id');
+
 		this.fireEvent('select', [string]);
+
+		this.input.value = this.value = string;
+		this.reset(this.options.resetOnSelect);
+		this.parseData();
 	},
 
-	reset: function(){
+	reset: function(all){
 		this.selected = -1;
-		this.input.value = this.value = '';
+		if (all) {
+			this.input.value = this.value = '';
+			this.parseData();
+		}
 	},
 
-	navigate: function(direction){
-		var els = this.output.getChildren().removeClass(this.options.selected),
+	navigate: function(){
+		var els = this.matched.removeClass(this.options.selected),
 			max = (els.length > this.options.outputMax) ? this.options.outputMax : els.length;
-
-		// Increment selected
-		if (direction === 'up') this.selected--;
-		if (direction === 'down') this.selected++;
 
 		// Keep selected within bounds
 		if (this.selected < 0)
@@ -146,27 +152,29 @@ var Autocomplete = this.Autocomplete = new Class({
 	},
 
 	parseData: function(){
-		var matched = [],
-			regex = new RegExp(this.value, 'gi'),
+		var regex = regEscape(this.value.trim()),
+			value = this.value.toLowerCase().trim(),
+			matched = [],
+			first = [],
+			regFirst = new RegExp('^' + regex, 'i'),
+			regAnywhere = new RegExp(regex, 'gi'),
 			replace = this.options.replace,
-			fn = function(str, i){
-				var match = str.test(regex);
-				dbg.log('Match Status: ', str, match, !match);
+			fn = function(str){
+				if (!str.match(regAnywhere) || str.toLowerCase() === value) return;
 
-				// For some reason, calling this make everything work properly?!
-				!str.test(regex);
-
-				if (!match) return;
-				matched.push({
+				var obj = {
 					str: str,
-					html: str.replace(regex, replace)
-				});
+					html: str.replace(regAnywhere, replace)
+				};
+
+				if (str.match(regFirst)) first.push(obj)
+				else matched.push(obj);
 			};
 
-		dbg.log('Regex: ', regex);
+		if (this.value !== '') this.data.each(fn, this);
 
-		if (this.value !== '') this.data.each(fn);
-		dbg.log('Array of ', matched);
+		matched = first.append(matched);
+
 		this.updateList(matched);
 	},
 
@@ -174,15 +182,17 @@ var Autocomplete = this.Autocomplete = new Class({
 		this.output.innerHTML = '';
 		if (!matched || matched.length === 0) return this.blur();
 
-		this.matched = matched.length;
+		this.matched = [];
 
 		matched.each(function(obj, i){
 			if (i >= this.options.outputMax) return;
-			new Element(this.options.tag, {
+			this.matched.push(new Element(this.options.tag, {
 				html: obj.html,
 				'data-id': obj.str
-			}).inject(this.output);
+			}).inject(this.output));
 		}, this);
+
+		this.matched = new Elements(this.matched);
 
 		this.focus();
 	}
@@ -192,6 +202,5 @@ var Autocomplete = this.Autocomplete = new Class({
 var regEscape = function(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
-
 
 }).call(this);
