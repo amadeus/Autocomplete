@@ -5,12 +5,11 @@ var Autocomplete = this.Autocomplete = new Class({
 	Implements: [Options, Events, Class.Binds],
 
 	options: {
-		attach: true,
-		min: 1,
-		replace: '<span class="highlight">$&</span>',
-		tag: 'li',
+		minParse: 1,
 		outputMax: 8,
-		selected: 'selected',
+		tag: 'li',
+		replace: '<span class="highlight">$&</span>',
+		selectedClass: 'selected',
 		resetOnSelect: false
 	},
 
@@ -23,12 +22,14 @@ var Autocomplete = this.Autocomplete = new Class({
 		this.output = document.id(output);
 		this.addData(data);
 		this.setOptions(options);
-		if (this.options.attach) this.attach();
-		this.blur();
+		this.attach();
+		this.hide();
 	},
 
 	addData: function(data){
-		this.data.append(Array.from(data));
+		if (!data) return this;
+		this.data.append(Array.from(data).flatten());
+		return this;
 	},
 
 	attach: function(){
@@ -38,14 +39,16 @@ var Autocomplete = this.Autocomplete = new Class({
 			keyup: this.bound('keypress'),
 			keydown: this.bound('keydown'),
 			keypress: this.bound('keypress'),
-			focus: this.bound('focus'),
-			blur: this.bound('blur')
+			focus: this.bound('show'),
+			blur: this.bound('hide')
 		});
 
 		this.output
 			.addEvent('mousedown:relay(' + tag + ')', this.bound('mousedown'))
 			.addEvent('click:relay(' + tag + ')', this.bound('click'))
 			.addEvent('mouseenter:relay(' + tag + ')', this.bound('mouseenter'));
+
+		return this;
 	},
 
 	detach: function(){
@@ -55,14 +58,16 @@ var Autocomplete = this.Autocomplete = new Class({
 			keyup: this.bound('keypress'),
 			keydown: this.bound('keydown'),
 			keypress: this.bound('keypress'),
-			focus: this.bound('focus'),
-			blur: this.bound('blur')
+			focus: this.bound('show'),
+			blur: this.bound('hide')
 		});
 
 		this.output
 			.removeEvent('mousedown:relay(' + tag + ')', this.bound('mousedown'))
 			.removeEvent('click:relay(' + tag + ')', this.bound('click'))
 			.removeEvent('mouseenter:relay(' + tag + ')', this.bound('mouseenter'));
+
+		return this;
 	},
 
 	keydown: function(e){
@@ -91,15 +96,16 @@ var Autocomplete = this.Autocomplete = new Class({
 
 		this.value = this.input.value;
 
-		if (this.value.length >= this.options.min) this.parseData();
+		if (this.value.length >= this.options.minParse) this.filterData();
 		else this.updateList();
 	},
 
-	focus: function(){
+	show: function(){
+		// Only show if there is content to show
 		if (this.matched.length) this.output.setStyle('display', 'block');
 	},
 
-	blur: function(){
+	hide: function(){
 		this.output.setStyle('display', 'none');
 	},
 
@@ -120,46 +126,41 @@ var Autocomplete = this.Autocomplete = new Class({
 
 	select: function(str){
 		if (this.value === '') return this;
-
 		var string = (str) ? str : (this.selected === -1) ? this.value : this.matched[this.selected].get('data-id');
-
 		this.fireEvent('select', [string]);
-
 		this.input.value = this.value = string;
 		this.reset(this.options.resetOnSelect);
-		this.parseData();
+		return this;
 	},
 
 	reset: function(all){
 		this.selected = -1;
-		if (all) {
-			this.input.value = this.value = '';
-			this.parseData();
-		}
+		if (all) this.input.value = this.value = '';
+		this.filterData();
+		return this;
 	},
 
 	navigate: function(){
-		var els = this.matched.removeClass(this.options.selected),
+		var els = this.matched.removeClass(this.options.selectedClass),
 			max = (els.length > this.options.outputMax) ? this.options.outputMax : els.length;
 
 		// Keep selected within bounds
-		if (this.selected < 0)
-			return this.selected = -1;
-		if (this.selected >= max)
-			this.selected = max - 1;
-
-		if (this.selected > -1) els[this.selected].addClass(this.options.selected);
+		if (this.selected < 0) return this.selected = -1;
+		if (this.selected >= max) this.selected = max - 1;
+		if (this.selected > -1) els[this.selected].addClass(this.options.selectedClass);
+		return this;
 	},
 
-	parseData: function(){
+	filterData: function(){
 		var regex = regEscape(this.value.trim()),
 			value = this.value.toLowerCase().trim(),
-			matched = [],
-			first = [],
 			regFirst = new RegExp('^' + regex, 'i'),
 			regAnywhere = new RegExp(regex, 'gi'),
 			replace = this.options.replace,
+			first = [],
+			matched = [],
 			fn = function(str){
+				// If there is no match, or the string is an exact match...
 				if (!str.match(regAnywhere) || str.toLowerCase() === value) return;
 
 				var obj = {
@@ -172,29 +173,26 @@ var Autocomplete = this.Autocomplete = new Class({
 			};
 
 		if (this.value !== '') this.data.each(fn, this);
-
 		matched = first.append(matched);
-
 		this.updateList(matched);
 	},
 
 	updateList: function(matched){
+		// Clean the output the quick way
 		this.output.innerHTML = '';
-		if (!matched || matched.length === 0) return this.blur();
+		if (!matched || matched.length === 0) return this.hide();
 
 		this.matched = [];
-
-		matched.each(function(obj, i){
+		var addItems = function(obj, i){
 			if (i >= this.options.outputMax) return;
 			this.matched.push(new Element(this.options.tag, {
 				html: obj.html,
 				'data-id': obj.str
 			}).inject(this.output));
-		}, this);
-
+		};
+		matched.each(addItems, this);
 		this.matched = new Elements(this.matched);
-
-		this.focus();
+		this.show();
 	}
 
 });
